@@ -2,6 +2,9 @@
 # .gitignore for most used editors
 ##
 
+lexer
+lexer.o
+
 # User-specific files
 *.rsuser
 *.suo
