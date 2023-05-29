@@ -87,6 +87,10 @@ readChar:
         ; l.position = l.readPosition
         mov rsi, rdx
         ; l.readPosition += 1
+        ; this will globally update the variable inside
+        ; the register rbx
+        ; if you want to update a variable in a register, use
+        ; memory addressing
         inc dword[rdx]
 
     pop r13
@@ -104,7 +108,7 @@ NextToken:
     syscall
 
     ; USE ASCII VALUES GRANT !!!!!!!!
-    
+
     ; Check if char is an equal sign
     cmp byte[rsi], '='
     je  equal
