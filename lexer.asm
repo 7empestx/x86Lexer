@@ -1,12 +1,31 @@
 section .data
-    LF      equ     10  ; line feed
-    NULL    equ     0   ; end of string
-    STDOUT  equ     1   ; standard output
-    STDIN   equ     0   ; standard input
     EOF     equ     -1  ; end of file
 
     SYS_write   equ 1   ; write
     SYS_read    equ 0   ; read
+    ;  Define standard constants.
+
+    TRUE            equ     1
+    FALSE           equ     0
+
+    LF              equ     10
+    NULL            equ     0
+
+    SUCCESS         equ     0                       ; successful operation
+    NOSUCCESS       equ     1
+
+    STDIN           equ     0                       ; standard input
+    STDOUT          equ     1                       ; standard output
+    STDERR          equ     2                       ; standard error
+
+    SYS_read        equ     0                       ; code for read
+    SYS_write       equ     1                       ; code for write
+    SYS_open        equ     2                       ; code for file open
+    SYS_close       equ     3                       ; code for file close
+    SYS_fork        equ     57                      ; code for fork
+    SYS_exit        equ     60                      ; code for terminate
+    SYS_creat       equ     85                      ; code for file open/create
+    SYS_time        equ     201                     ; code for get time
 
     input   db  "=+(){},;", NULL ; null terminated string input
     newLine db  LF,         NULL ; line feed null - CRLF go away 
@@ -28,9 +47,13 @@ _start:
     call readChar
 
     ; Exit the program
-    mov eax, 60            ; sys_exit system call
-    xor edi, edi           ; exit code 0
-    syscall                ; execute the system call
+    ; mov eax, 60            ; sys_exit system call
+    ; xor edi, edi           ; exit code 0
+    ; syscall                ; execute the system call
+    last:
+    mov     rax, SYS_exit
+    mov     rdi, EXIT_SUCCESS
+    syscall
 
 global TestNextToken
 TestNextToken:
@@ -44,7 +67,9 @@ TestNextToken:
 ; inputLength:  int     (r8)  length of input
 global readChar
 readChar:
-    
+    push    rbx
+    push    r12
+    push    r13
     ; if l.readPosition >= len(l.input) { l.ch = 0 }
     cmp rdx, r8
     jge readInputDone
@@ -62,7 +87,15 @@ readChar:
         ; l.position = l.readPosition
         mov rsi, rdx
         ; l.readPosition += 1
-        inc rdx
+        ; this will globally update the variable inside
+        ; the register rbx
+        ; if you want to update a variable in a register, use
+        ; memory addressing
+        inc dword[rdx]
+
+    pop r13
+    pop r12
+    pop rbx
     ret
 
 global NextToken
@@ -73,6 +106,8 @@ NextToken:
     mov rsi, input
     mov rdx, 1
     syscall
+
+    ; USE ASCII VALUES GRANT !!!!!!!!
 
     ; Check if char is an equal sign
     cmp byte[rsi], '='
@@ -136,7 +171,9 @@ NextToken:
 ; 1) address(rdi), string
 global printString
 printString:
-
+    push    rbp
+    mov    rbp, rsp
+    push    rbx
     ; Count chars in string
     mov rbx, rdi
     mov rdx, 0
@@ -158,21 +195,37 @@ printString:
     syscall
 
     printDone:
+    pop rbx
+    pop rbp
         ret
 
 ; Arguments:
 ; 1) address(rdi), string
 global getStringLength
 getStringLength:
+; integer returning function that returns the string length???
+;  string length return in rax
+    push    rbx
+    push    r12
+    push    r13
     ; Count chars in string
     mov rbx, rdi
-    mov rdx, 0
-    
+    ; mov r13, 0
+    ; used rax instead so that this function will return str length
+    ; used like x = getStringLength
+    mov rax, 0
     myStrCountLoop:
         cmp byte[rbx], NULL
         je strCountDone
-        inc rdx
+        inc rax
         inc rbx
         jmp myStrCountLoop 
     myStrCountDone:
+    pop r13
+    pop r12
+    pop rbx
         ret
+
+
+; exits the program. put it here just in case you need it
+
